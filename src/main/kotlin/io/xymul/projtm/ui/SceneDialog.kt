@@ -7,6 +7,7 @@ import com.intellij.ui.components.JBLabel
 import com.intellij.util.ui.FormBuilder
 import io.xymul.projtm.model.Scene
 import io.xymul.projtm.theme.ThemeItem
+import io.xymul.projtm.theme.ThemeService
 import javax.swing.JComponent
 import javax.swing.JTextField
 
@@ -21,7 +22,9 @@ class SceneDialog(private val usedNames: Set<String>, scene: Scene? = null) : Di
         title = ProjectThemeManagerBundle.message("settings.dialog.scene.title")
         themeBox.renderer = ThemeItemRenderer()
         installedThemes().forEach { themeBox.addItem(it) }
-        themeBox.selectedItem = installedThemes().firstOrNull { it.id == scene?.themeId }
+        // A new scene starts with the theme that is active right now.
+        val initialThemeId = scene?.themeId ?: ThemeService.getInstance().currentThemeId()
+        themeBox.selectedItem = installedThemes().firstOrNull { it.id == initialThemeId }
         init()
     }
 

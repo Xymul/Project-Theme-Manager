@@ -9,6 +9,7 @@ import com.intellij.openapi.util.Disposer
 import com.intellij.ui.SimpleColoredComponent
 import com.intellij.ui.SimpleTextAttributes
 import com.intellij.ui.ToolbarDecorator
+import com.intellij.ui.awt.RelativePoint
 import com.intellij.ui.components.JBLabel
 import com.intellij.ui.table.JBTable
 import io.xymul.projtm.core.ConfigRepository
@@ -18,6 +19,7 @@ import io.xymul.projtm.theme.ActiveSceneService
 import io.xymul.projtm.theme.ThemeService
 import java.awt.BorderLayout
 import java.awt.Component
+import java.awt.Point
 import java.awt.event.MouseAdapter
 import java.awt.event.MouseEvent
 import javax.swing.JCheckBox
@@ -26,6 +28,8 @@ import javax.swing.JPanel
 import javax.swing.JTable
 import javax.swing.ListSelectionModel
 import javax.swing.table.TableCellRenderer
+
+private const val SCENES_COLUMN = 1
 
 // Application level page that lists every project known to the plugin.
 class ProjectThemeManagerConfigurable : Configurable, Configurable.Composite {
@@ -139,21 +143,24 @@ class ProjectThemeManagerConfigurable : Configurable, Configurable.Composite {
     private fun scenePopupListener(): MouseAdapter = object : MouseAdapter() {
         override fun mouseClicked(event: MouseEvent) {
             val row = table.rowAtPoint(event.point)
-            if (row < 0 || table.columnAtPoint(event.point) != 1) return
-            showScenesPopup(row)
+            val column = table.columnAtPoint(event.point)
+            if (row < 0 || column != SCENES_COLUMN) return
+            showScenesPopup(row, column)
         }
     }
 
-    private fun showScenesPopup(row: Int) {
+    // The chooser opens right below the clicked cell instead of below the whole table.
+    private fun showScenesPopup(row: Int, column: Int) {
         val names = model.sceneNames(row)
         if (names.isEmpty()) return
-        JBPopupFactory.getInstance()
+        val popup = JBPopupFactory.getInstance()
             .createPopupChooserBuilder(names)
             .setTitle(model.rowAt(row).entry.name)
             .setRequestFocus(true)
             .setItemChosenCallback { chosen -> editScene(row, chosen) }
             .createPopup()
-            .showUnderneathOf(table)
+        val cell = table.getCellRect(row, column, true)
+        popup.show(RelativePoint(table, Point(cell.x, cell.y + cell.height)))
     }
 
     private fun editScene(row: Int, sceneName: String) {
