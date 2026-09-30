@@ -13,6 +13,7 @@ import com.intellij.ui.awt.RelativePoint
 import com.intellij.ui.components.JBLabel
 import com.intellij.ui.table.JBTable
 import io.xymul.projtm.core.ConfigRepository
+import io.xymul.projtm.core.projectPathOf
 import io.xymul.projtm.model.ProjectEntry
 import io.xymul.projtm.model.Scene
 import io.xymul.projtm.theme.ActiveSceneService
@@ -39,9 +40,12 @@ class ProjectThemeManagerConfigurable : Configurable, Configurable.Composite {
     private val disposable = Disposer.newDisposable("ProjectThemeManager")
     private val onRepositoryChanged: () -> Unit = { reset() }
 
+    // The child page is created once because the platform expects a stable instance.
+    private val currentProjectPage = CurrentProjectConfigurable()
+
     override fun getDisplayName(): String = ProjectThemeManagerBundle.message("settings.displayName")
 
-    override fun getConfigurables(): Array<Configurable> = arrayOf(CurrentProjectConfigurable())
+    override fun getConfigurables(): Array<Configurable> = arrayOf(currentProjectPage)
 
     override fun createComponent(): JComponent {
         table.selectionModel.selectionMode = ListSelectionModel.SINGLE_SELECTION

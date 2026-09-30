@@ -7,14 +7,17 @@ import com.intellij.ui.ToolbarDecorator
 import com.intellij.ui.components.JBLabel
 import com.intellij.ui.table.JBTable
 import io.xymul.projtm.core.ConfigRepository
+import io.xymul.projtm.core.projectPathOf
 import io.xymul.projtm.model.ProjectEntry
 import io.xymul.projtm.model.ProjectSceneConfig
 import io.xymul.projtm.model.Scene
 import io.xymul.projtm.theme.ActiveSceneService
 import io.xymul.projtm.theme.ThemeService
 import java.awt.BorderLayout
+import java.awt.FlowLayout
 import java.awt.event.MouseAdapter
 import java.awt.event.MouseEvent
+import javax.swing.JButton
 import javax.swing.JComponent
 import javax.swing.JPanel
 import javax.swing.ListSelectionModel
@@ -30,16 +33,25 @@ class CurrentProjectConfigurable : Configurable {
     private val onRepositoryChanged: () -> Unit = { reset() }
 
     override fun getDisplayName(): String =
-        currentProject()?.name ?: ProjectThemeManagerBundle.message("settings.displayName")
+        currentProject()?.name ?: ProjectThemeManagerBundle.message("settings.page.workScenes")
 
     override fun createComponent(): JComponent {
         table.selectionModel.selectionMode = ListSelectionModel.SINGLE_SELECTION
         table.setShowGrid(false)
+        table.emptyText.text = ProjectThemeManagerBundle.message("settings.page.noScenes")
         table.columnModel.getColumn(1).cellEditor = ComboBoxCellEditor { _ -> installedThemes() }
         table.addMouseListener(sceneClickListener())
+        val addSceneButton = JButton(ProjectThemeManagerBundle.message("settings.button.addScene"))
+        addSceneButton.addActionListener { addScene() }
         val header = JPanel(BorderLayout())
         header.add(projectLabel, BorderLayout.WEST)
-        header.add(hintLabel, BorderLayout.EAST)
+        header.add(
+            JPanel(FlowLayout(FlowLayout.RIGHT)).apply {
+                add(hintLabel)
+                add(addSceneButton)
+            },
+            BorderLayout.EAST,
+        )
         val decorated = ToolbarDecorator.createDecorator(table)
             .setAddAction { addScene() }
             .setRemoveAction { removeScene() }
@@ -89,7 +101,11 @@ class CurrentProjectConfigurable : Configurable {
         val path = projectPathOf(project).orEmpty()
         val entry = repository.findProject(path)
         projectLabel.text = project.name + " (" + path + ")"
-        hintLabel.text = if (entry == null) ProjectThemeManagerBundle.message("settings.page.notRegistered") else ""
+        hintLabel.text = if (entry == null) {
+            ProjectThemeManagerBundle.message("settings.page.notRegistered")
+        } else {
+            ProjectThemeManagerBundle.message("settings.page.hint")
+        }
         val config = entry?.let { repository.scenesOf(it) }
         model.setData(config?.scenes.orEmpty(), config?.defaultScene)
         table.isEnabled = true
@@ -136,7 +152,7 @@ class CurrentProjectConfigurable : Configurable {
         if (ThemeService.getInstance().applyTheme(scene.themeId)) state.markApplied(scene.name)
     }
 
-    private fun currentProject(): Project? = currentProjectOf(table)
+    private fun currentProject(): Project? = currentProjectOf(table) ?: fallbackProject()
 
     private fun entryFor(project: Project): ProjectEntry? {
         val path = projectPathOf(project) ?: return null

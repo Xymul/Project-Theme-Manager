@@ -3,9 +3,9 @@ package io.xymul.projtm.startup
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.startup.ProjectActivity
 import io.xymul.projtm.core.ConfigRepository
+import io.xymul.projtm.core.projectPathOf
 import io.xymul.projtm.theme.ActiveSceneService
 import io.xymul.projtm.theme.ThemeService
-import io.xymul.projtm.ui.projectPathOf
 
 // Applies the default work scene of a project right after it was opened.
 class ProjectOpenActivity : ProjectActivity {
