@@ -6,7 +6,6 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.ProjectManager
 import com.intellij.openapi.ui.Messages
 import com.intellij.openapi.util.Disposer
-import com.intellij.ui.JBColor
 import com.intellij.ui.SimpleColoredComponent
 import com.intellij.ui.SimpleTextAttributes
 import com.intellij.ui.ToolbarDecorator
@@ -31,27 +30,11 @@ import javax.swing.table.TableCellRenderer
 
 private const val SCENES_COLUMN = 1
 
-// Soft highlight of the current project row, tuned for light and dark themes.
-private val CURRENT_PROJECT_BACKGROUND = JBColor(0xE8F1FD, 0x2F3B4E)
-
 // Application level page that lists every project known to the plugin.
 class ProjectThemeManagerConfigurable : Configurable {
 
     private val model = ProjectsTableModel()
-
-    // The current project is pinned to the first row and keeps its highlight in every column.
-    private val table = highlightedTable()
-
-    private fun highlightedTable(): JBTable {
-        val projects = model
-        return object : JBTable(projects) {
-            override fun prepareRenderer(renderer: TableCellRenderer, row: Int, column: Int): Component {
-                val component = super.prepareRenderer(renderer, row, column)
-                if (!isRowSelected(row) && projects.isCurrent(row)) component.background = CURRENT_PROJECT_BACKGROUND
-                return component
-            }
-        }
-    }
+    private val table = JBTable(model)
     private val disposable = Disposer.newDisposable("ProjectThemeManager")
     private val onRepositoryChanged: () -> Unit = { reset() }
 
@@ -63,7 +46,7 @@ class ProjectThemeManagerConfigurable : Configurable {
     override fun createComponent(): JComponent {
         table.selectionModel.selectionMode = ListSelectionModel.SINGLE_SELECTION
         table.setShowGrid(false)
-        table.columnModel.getColumn(0).cellRenderer = ProjectNameRenderer(model)
+        table.columnModel.getColumn(0).cellRenderer = ProjectNameRenderer()
         // All editable columns use the same drop down, choosing a scene opens its editor.
         table.columnModel.getColumn(SCENES_COLUMN).cellEditor =
             ComboBoxCellEditor<String>({ row -> model.sceneNames(row) }) { row, name -> editScene(row, name) }
@@ -199,8 +182,8 @@ class ProjectThemeManagerConfigurable : Configurable {
     }
 }
 
-// Shows the project name followed by the grayed out absolute path, the current project stays bold.
-private class ProjectNameRenderer(private val model: ProjectsTableModel) : TableCellRenderer {
+// Shows the project name in bold followed by the grayed out absolute path.
+private class ProjectNameRenderer : TableCellRenderer {
 
     private val component = SimpleColoredComponent()
 
@@ -215,12 +198,7 @@ private class ProjectNameRenderer(private val model: ProjectsTableModel) : Table
         component.clear()
         val entry = value as? ProjectEntry
         if (entry != null) {
-            val nameAttributes = if (model.isCurrent(row)) {
-                SimpleTextAttributes.REGULAR_BOLD_ATTRIBUTES
-            } else {
-                SimpleTextAttributes.REGULAR_ATTRIBUTES
-            }
-            component.append(entry.name, nameAttributes)
+            component.append(entry.name, SimpleTextAttributes.REGULAR_BOLD_ATTRIBUTES)
             component.append("  " + entry.path, SimpleTextAttributes.GRAYED_ATTRIBUTES)
             component.toolTipText = entry.path
         }
