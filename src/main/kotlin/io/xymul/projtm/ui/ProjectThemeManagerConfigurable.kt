@@ -4,7 +4,6 @@ import com.intellij.CommonBundle
 import com.intellij.openapi.options.Configurable
 import com.intellij.openapi.project.ProjectManager
 import com.intellij.openapi.ui.Messages
-import com.intellij.openapi.ui.popup.JBPopupFactory
 import com.intellij.openapi.util.Disposer
 import com.intellij.ui.SimpleColoredComponent
 import com.intellij.ui.SimpleTextAttributes
@@ -14,14 +13,13 @@ import com.intellij.ui.table.JBTable
 import io.xymul.projtm.core.ConfigRepository
 import io.xymul.projtm.core.projectPathOf
 import io.xymul.projtm.model.ProjectEntry
+import io.xymul.projtm.model.ProjectSceneConfig
 import io.xymul.projtm.model.Scene
-import io.xymul.projtm.theme.ActiveSceneService
 import io.xymul.projtm.theme.SceneSwitcher
+import io.xymul.projtm.theme.ThemeItem
 import io.xymul.projtm.theme.ThemeService
 import java.awt.BorderLayout
 import java.awt.Component
-import java.awt.event.MouseAdapter
-import java.awt.event.MouseEvent
 import javax.swing.JCheckBox
 import javax.swing.JComponent
 import javax.swing.JPanel
@@ -45,9 +43,11 @@ class ProjectThemeManagerConfigurable : Configurable {
         table.selectionModel.selectionMode = ListSelectionModel.SINGLE_SELECTION
         table.setShowGrid(false)
         table.columnModel.getColumn(0).cellRenderer = ProjectNameRenderer()
-        table.columnModel.getColumn(2).cellEditor = ComboBoxCellEditor { row -> model.sceneNames(row) }
-        table.columnModel.getColumn(3).cellEditor = ComboBoxCellEditor { _ -> installedThemes() }
-        table.addMouseListener(scenePopupListener())
+        // All editable columns use the same drop down, choosing a scene opens its editor.
+        table.columnModel.getColumn(SCENES_COLUMN).cellEditor =
+            ComboBoxCellEditor<String>({ row -> model.sceneNames(row) }) { row, name -> editScene(row, name) }
+        table.columnModel.getColumn(2).cellEditor = ComboBoxCellEditor<String>({ row -> model.sceneNames(row) })
+        table.columnModel.getColumn(3).cellEditor = ComboBoxCellEditor<ThemeItem>({ _ -> installedThemes() })
         val decorated = ToolbarDecorator.createDecorator(table)
             .setAddAction { addProject() }
             .setRemoveAction { removeProject() }
@@ -71,10 +71,11 @@ class ProjectThemeManagerConfigurable : Configurable {
 
     override fun apply() {
         val repository = ConfigRepository.getInstance()
+        val stored = currentEntry()?.let { repository.scenesOf(it) }
         model.rows().forEach { row ->
             if (row.config != repository.scenesOf(row.entry)) repository.updateScenes(row.entry, row.config)
         }
-        applyCurrentProjectTheme()
+        applyCurrentProjectTheme(stored)
     }
 
     override fun reset() {
@@ -138,21 +139,6 @@ class ProjectThemeManagerConfigurable : Configurable {
         return answer == 0
     }
 
-    private fun scenePopupListener(): MouseAdapter = object : MouseAdapter() {
-        override fun mouseClicked(event: MouseEvent) {
-            val row = table.rowAtPoint(event.point)
-            if (row < 0 || table.columnAtPoint(event.point) != SCENES_COLUMN) return
-            showScenesPopup(row)
-        }
-    }
-
-    // Centered chooser, the entries use the same padding as the quick switch popup.
-    private fun showScenesPopup(row: Int) {
-        val names = model.sceneNames(row)
-        if (names.isEmpty()) return
-        showSceneChooser(names, model.rowAt(row).entry.name, null, table) { chosen -> editScene(row, chosen) }
-    }
-
     private fun editScene(row: Int, sceneName: String) {
         val projectRow = model.rowAt(row)
         val scene = projectRow.config.scenes.firstOrNull { it.name == sceneName } ?: return
@@ -169,15 +155,14 @@ class ProjectThemeManagerConfigurable : Configurable {
         model.refreshRow(row)
     }
 
-    // Applies the new default theme when the current project is on that scene.
-    private fun applyCurrentProjectTheme() {
+    // Applies the new default theme when the default scene or its theme has changed.
+    private fun applyCurrentProjectTheme(stored: ProjectSceneConfig?) {
         val project = currentProjectOf(table) ?: return
         val path = projectPathOf(project) ?: return
         val repository = ConfigRepository.getInstance()
         val entry = repository.findProject(path) ?: return
         val config = repository.scenesOf(entry)
-        val state = ActiveSceneService.getInstance(project)
-        if (state.applied && state.activeScene != config.defaultScene) return
+        if (!SceneSwitcher.shouldApply(project, stored, config)) return
         config.defaultScene?.let { SceneSwitcher.switchTo(project, it) }
     }
 }

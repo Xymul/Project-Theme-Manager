@@ -21,6 +21,16 @@ object SceneSwitcher {
     fun switchToDefault(project: Project): Boolean =
         scenesConfig(project)?.defaultScene?.let { switchTo(project, it) } ?: false
 
+    // Decides whether a settings page has to switch the theme after the user pressed OK.
+    fun shouldApply(project: Project, stored: ProjectSceneConfig?, updated: ProjectSceneConfig): Boolean {
+        val state = ActiveSceneService.getInstance(project)
+        if (stored != null) {
+            if (stored.defaultScene != updated.defaultScene) return true
+            if (themeOf(stored) != themeOf(updated)) return true
+        }
+        return !state.applied || state.activeScene == updated.defaultScene
+    }
+
     // Switches to the scene and remembers it, reports a missing theme instead of failing silently.
     fun switchTo(project: Project, sceneName: String): Boolean {
         val scene = scenesConfig(project)?.scenes?.firstOrNull { it.name == sceneName } ?: return false
@@ -31,6 +41,9 @@ object SceneSwitcher {
         ActiveSceneService.getInstance(project).markApplied(scene.name)
         return true
     }
+
+    private fun themeOf(config: ProjectSceneConfig): String? =
+        config.scenes.firstOrNull { it.name == config.defaultScene }?.theme
 
     private fun notifyMissingTheme(scene: Scene) {
         if (ApplicationManager.getApplication() == null) return

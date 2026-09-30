@@ -18,10 +18,12 @@
                 id="io.xymul.projtm.settings"
                 displayName="Project Theme Manager"
                 instance="io.xymul.projtm.ui.ProjectThemeManagerConfigurable"/>
-        <!-- Registered as a child of the page above, the node name comes from the current project. -->
+        <!-- Registered as a child of the page above; the descriptor needs a static name here,
+             the page itself shows the current project. -->
         <applicationConfigurable
                 id="io.xymul.projtm.settings.currentProject"
                 parentId="io.xymul.projtm.settings"
+                displayName="Work Scenes"
                 instance="io.xymul.projtm.ui.CurrentProjectConfigurable"/>
         <postStartupActivity implementation="io.xymul.projtm.startup.ProjectOpenActivity"/>
     </extensions>

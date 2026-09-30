@@ -11,11 +11,10 @@ import io.xymul.projtm.core.projectPathOf
 import io.xymul.projtm.model.ProjectEntry
 import io.xymul.projtm.model.ProjectSceneConfig
 import io.xymul.projtm.model.Scene
-import io.xymul.projtm.theme.ActiveSceneService
 import io.xymul.projtm.theme.SceneSwitcher
+import io.xymul.projtm.theme.ThemeItem
 import io.xymul.projtm.theme.ThemeService
 import java.awt.BorderLayout
-import java.awt.FlowLayout
 import java.awt.event.MouseAdapter
 import java.awt.event.MouseEvent
 import javax.swing.JButton
@@ -33,6 +32,9 @@ class CurrentProjectConfigurable : Configurable {
     private val disposable = Disposer.newDisposable("ProjectThemeManager")
     private val onRepositoryChanged: () -> Unit = { reset() }
 
+    // Configuration as it was loaded, used to detect changes that require a theme switch.
+    private var storedConfig: ProjectSceneConfig? = null
+
     override fun getDisplayName(): String =
         currentProject()?.name ?: ProjectThemeManagerBundle.message("settings.page.workScenes")
 
@@ -40,19 +42,16 @@ class CurrentProjectConfigurable : Configurable {
         table.selectionModel.selectionMode = ListSelectionModel.SINGLE_SELECTION
         table.setShowGrid(false)
         table.emptyText.text = ProjectThemeManagerBundle.message("settings.page.noScenes")
-        table.columnModel.getColumn(1).cellEditor = ComboBoxCellEditor { _ -> installedThemes() }
+        table.columnModel.getColumn(1).cellEditor = ComboBoxCellEditor<ThemeItem>({ _ -> installedThemes() })
         table.addMouseListener(sceneClickListener())
         val addSceneButton = JButton(ProjectThemeManagerBundle.message("settings.button.addScene"))
         addSceneButton.addActionListener { addScene() }
         val header = JPanel(BorderLayout())
         header.add(projectLabel, BorderLayout.WEST)
-        header.add(
-            JPanel(FlowLayout(FlowLayout.RIGHT)).apply {
-                add(hintLabel)
-                add(addSceneButton)
-            },
-            BorderLayout.EAST,
-        )
+        header.add(hintLabel, BorderLayout.EAST)
+        // The button keeps its own row so it stays visible when the dialog is resized.
+        val buttonRow = JPanel(BorderLayout())
+        buttonRow.add(addSceneButton, BorderLayout.WEST)
         val decorated = ToolbarDecorator.createDecorator(table)
             .setAddAction { addScene() }
             .setRemoveAction { removeScene() }
@@ -63,6 +62,7 @@ class CurrentProjectConfigurable : Configurable {
         val panel = JPanel(BorderLayout())
         panel.add(header, BorderLayout.NORTH)
         panel.add(decorated, BorderLayout.CENTER)
+        panel.add(buttonRow, BorderLayout.SOUTH)
         ConfigRepository.getInstance().addChangeListener(onRepositoryChanged)
         ThemeService.getInstance().subscribe(disposable) { reset() }
         reset()
@@ -84,9 +84,13 @@ class CurrentProjectConfigurable : Configurable {
             val first = model.scenes().firstOrNull() ?: return
             repository.addProject(project.name, path, first)
         }
+        val stored = storedConfig
         val config = ProjectSceneConfig(entry.name, path, entry.uuid, model.defaultName(), model.scenes())
         repository.updateScenes(entry, config)
-        applyDefaultTheme(project, config)
+        storedConfig = config
+        if (SceneSwitcher.shouldApply(project, stored, config)) {
+            config.defaultScene?.let { SceneSwitcher.switchTo(project, it) }
+        }
     }
 
     override fun reset() {
@@ -108,6 +112,7 @@ class CurrentProjectConfigurable : Configurable {
             ProjectThemeManagerBundle.message("settings.page.hint")
         }
         val config = entry?.let { repository.scenesOf(it) }
+        storedConfig = config
         model.setData(config?.scenes.orEmpty(), config?.defaultScene)
         table.isEnabled = true
     }
@@ -143,13 +148,6 @@ class CurrentProjectConfigurable : Configurable {
         if (!dialog.showAndGet()) return
         val themeName = dialog.themeName() ?: scene.theme
         model.update(row, Scene(dialog.sceneName(), themeName))
-    }
-
-    // Switches the theme right away when the current project is on the edited scene.
-    private fun applyDefaultTheme(project: Project, config: ProjectSceneConfig) {
-        val state = ActiveSceneService.getInstance(project)
-        if (state.applied && state.activeScene != config.defaultScene) return
-        config.defaultScene?.let { SceneSwitcher.switchTo(project, it) }
     }
 
     private fun currentProject(): Project? = currentProjectOf(table) ?: fallbackProject()
