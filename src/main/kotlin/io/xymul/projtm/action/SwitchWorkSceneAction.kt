@@ -5,9 +5,9 @@ import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.project.DumbAware
 import com.intellij.openapi.project.Project
-import com.intellij.openapi.ui.popup.JBPopupFactory
 import io.xymul.projtm.theme.SceneSwitcher
 import io.xymul.projtm.ui.ProjectThemeManagerBundle
+import io.xymul.projtm.ui.showSceneChooser
 
 // Quick switch between the work scenes of the current project.
 class SwitchWorkSceneAction : AnAction(), DumbAware {
@@ -23,14 +23,14 @@ class SwitchWorkSceneAction : AnAction(), DumbAware {
         val project = event.project ?: return
         val choices = choicesOf(project)
         if (choices.isEmpty()) return
-        val popup = JBPopupFactory.getInstance()
-            .createPopupChooserBuilder(choices)
-            .setTitle(ProjectThemeManagerBundle.message("action.switchWorkScene.title", project.name))
-            .setRequestFocus(true)
-            .setItemChosenCallback { choice -> SceneSwitcher.switchTo(project, choice.name) }
-            .createPopup()
-        popup.showInBestPositionFor(event.dataContext)
+        showSceneChooser(
+            choices,
+            ProjectThemeManagerBundle.message("action.switchWorkScene.title", project.name),
+            project,
+            null,
+        ) { choice -> SceneSwitcher.switchTo(project, choice.name) }
     }
+
 
     private fun choicesOf(project: Project?): List<SceneChoice> {
         if (project == null || project.isDisposed) return emptyList()
