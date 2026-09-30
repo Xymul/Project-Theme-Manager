@@ -2,8 +2,7 @@ package io.xymul.projtm.model
 
 data class Scene(
     val name: String,
-    val themeId: String,
-    val dark: Boolean = false,
+    val theme: String,
 )
 
 data class ProjectSceneConfig(

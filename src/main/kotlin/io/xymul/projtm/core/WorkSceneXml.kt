@@ -25,8 +25,7 @@ fun serializeWorkScenes(config: ProjectSceneConfig, pluginVersion: String): Docu
             scenes, "scene",
             attributes = mapOf(
                 "name" to scene.name,
-                "themeId" to scene.themeId,
-                "dark" to scene.dark.toString(),
+                "theme" to scene.theme,
             ),
         )
     }
@@ -44,12 +43,9 @@ fun parseWorkScenes(xml: Document): ProjectSceneConfig? {
     val scenesElement = root.firstChildElement(SCENES_NAME)
     val scenes = scenesElement?.childElements("scene")?.mapNotNull { element ->
         val sceneName = element.getAttribute("name").takeIf { it.isNotBlank() } ?: return@mapNotNull null
-        val themeId = element.getAttribute("themeId")
-        Scene(
-            name = sceneName,
-            themeId = themeId,
-            dark = element.getAttribute("dark").toBooleanStrictOrNull() ?: false,
-        )
+        // themeId is only read to migrate files written by older builds.
+        val theme = element.getAttribute("theme").ifBlank { element.getAttribute("themeId") }
+        Scene(name = sceneName, theme = theme)
     }.orEmpty()
     return ProjectSceneConfig(
         name = name,

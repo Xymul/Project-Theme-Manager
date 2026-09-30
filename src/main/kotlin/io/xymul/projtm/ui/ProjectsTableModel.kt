@@ -52,7 +52,7 @@ class ProjectsTableModel : AbstractTableModel() {
             0 -> projectRow.entry
             1 -> sceneSummary(projectRow)
             2 -> projectRow.config.defaultScene
-            3 -> defaultSceneOf(projectRow)?.let { themeItem(it.themeId) }
+            3 -> defaultSceneOf(projectRow)?.let { themeItem(it.theme) }
             else -> null
         }
     }
@@ -66,7 +66,7 @@ class ProjectsTableModel : AbstractTableModel() {
                 val name = projectRow.config.defaultScene ?: return
                 projectRow.config = projectRow.config.copy(
                     scenes = projectRow.config.scenes.map { scene ->
-                        if (scene.name == name) scene.copy(themeId = theme.id, dark = theme.dark) else scene
+                        if (scene.name == name) scene.copy(theme = theme.name) else scene
                     },
                 )
             }

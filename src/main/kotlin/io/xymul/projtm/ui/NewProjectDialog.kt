@@ -9,6 +9,7 @@ import io.xymul.projtm.core.ConfigRepository
 import io.xymul.projtm.core.normalizePath
 import io.xymul.projtm.model.Scene
 import io.xymul.projtm.theme.ThemeItem
+import io.xymul.projtm.theme.ThemeService
 import java.nio.file.Path
 import javax.swing.JButton
 import javax.swing.JComponent
@@ -30,7 +31,7 @@ class NewProjectDialog(recentPaths: List<String>) : DialogWrapper(true) {
         projectBox.isEditable = true
         themeBox.renderer = ThemeItemRenderer()
         installedThemes().forEach { themeBox.addItem(it) }
-        themeBox.selectedItem = installedThemes().firstOrNull { it.id == com.intellij.ide.ui.LafManager.getInstance().currentUIThemeLookAndFeel?.id }
+        themeBox.selectedItem = installedThemes().firstOrNull { it.name == ThemeService.getInstance().currentThemeName() }
         chooseButton.addActionListener { chooseDirectory() }
         projectBox.addActionListener { updateProjectName() }
         init()
@@ -73,7 +74,7 @@ class NewProjectDialog(recentPaths: List<String>) : DialogWrapper(true) {
 
     fun initialScene(): Scene {
         val theme = themeBox.selectedItem as? ThemeItem
-        return Scene(sceneName(), theme?.id.orEmpty(), theme?.dark ?: false)
+        return Scene(sceneName(), theme?.name.orEmpty())
     }
 
     private fun chooseDirectory() {

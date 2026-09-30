@@ -37,8 +37,8 @@ class XmlRoundTripTest {
             uuid = "demo-1f3a9c7b",
             defaultScene = "write",
             scenes = listOf(
-                Scene("default", "Darcula", dark = true),
-                Scene("write", "falcon-relax-light-green", dark = false),
+                Scene("default", "Darcula"),
+                Scene("write", "falcon-relax-light-green"),
             ),
         )
         val file = Files.createTempDirectory("ptm").resolve("Demo_ws.xml")
@@ -46,6 +46,31 @@ class XmlRoundTripTest {
 
         val parsed = parseWorkScenes(assertNotNull(parseDocument(file)))
         assertEquals(config, parsed)
+    }
+
+    @Test
+    fun legacyThemeIdAttributeIsMigratedToTheThemeName() {
+        val file = Files.createTempDirectory("ptm").resolve("Legacy_ws.xml")
+        Files.writeString(
+            file,
+            """
+            <?xml version="1.0" encoding="UTF-8"?>
+            <workScenes schema="1">
+                <plugin_version>1.0.0</plugin_version>
+                <project>
+                    <name>Legacy</name>
+                    <path>D:/Legacy</path>
+                    <uuid>legacy-1</uuid>
+                </project>
+                <scenes default="default">
+                    <scene name="default" themeId="Darcula" dark="true"/>
+                </scenes>
+            </workScenes>
+            """.trimIndent(),
+        )
+
+        val parsed = parseWorkScenes(assertNotNull(parseDocument(file)))
+        assertEquals(listOf(Scene("default", "Darcula")), parsed?.scenes)
     }
 
     @Test

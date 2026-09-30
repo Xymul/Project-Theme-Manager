@@ -12,6 +12,7 @@ import io.xymul.projtm.model.ProjectEntry
 import io.xymul.projtm.model.ProjectSceneConfig
 import io.xymul.projtm.model.Scene
 import io.xymul.projtm.theme.ActiveSceneService
+import io.xymul.projtm.theme.SceneSwitcher
 import io.xymul.projtm.theme.ThemeService
 import java.awt.BorderLayout
 import java.awt.FlowLayout
@@ -120,8 +121,8 @@ class CurrentProjectConfigurable : Configurable {
         val dialog = SceneDialog(model.names())
         if (!dialog.showAndGet()) return
         val service = ThemeService.getInstance()
-        val themeId = dialog.themeId() ?: service.currentThemeId() ?: return
-        model.add(Scene(dialog.sceneName(), themeId, service.isDark(themeId)))
+        val themeName = dialog.themeName() ?: service.currentThemeName() ?: return
+        model.add(Scene(dialog.sceneName(), themeName))
     }
 
     private fun removeScene() {
@@ -140,16 +141,15 @@ class CurrentProjectConfigurable : Configurable {
         val scene = model.sceneAt(row)
         val dialog = SceneDialog(model.names() - scene.name, scene)
         if (!dialog.showAndGet()) return
-        val themeId = dialog.themeId() ?: scene.themeId
-        model.update(row, Scene(dialog.sceneName(), themeId, ThemeService.getInstance().isDark(themeId)))
+        val themeName = dialog.themeName() ?: scene.theme
+        model.update(row, Scene(dialog.sceneName(), themeName))
     }
 
     // Switches the theme right away when the current project is on the edited scene.
     private fun applyDefaultTheme(project: Project, config: ProjectSceneConfig) {
         val state = ActiveSceneService.getInstance(project)
         if (state.applied && state.activeScene != config.defaultScene) return
-        val scene = config.scenes.firstOrNull { it.name == config.defaultScene } ?: return
-        if (ThemeService.getInstance().applyTheme(scene.themeId)) state.markApplied(scene.name)
+        config.defaultScene?.let { SceneSwitcher.switchTo(project, it) }
     }
 
     private fun currentProject(): Project? = currentProjectOf(table) ?: fallbackProject()

@@ -9,7 +9,6 @@ import com.intellij.openapi.util.Disposer
 import com.intellij.ui.SimpleColoredComponent
 import com.intellij.ui.SimpleTextAttributes
 import com.intellij.ui.ToolbarDecorator
-import com.intellij.ui.awt.RelativePoint
 import com.intellij.ui.components.JBLabel
 import com.intellij.ui.table.JBTable
 import io.xymul.projtm.core.ConfigRepository
@@ -17,10 +16,10 @@ import io.xymul.projtm.core.projectPathOf
 import io.xymul.projtm.model.ProjectEntry
 import io.xymul.projtm.model.Scene
 import io.xymul.projtm.theme.ActiveSceneService
+import io.xymul.projtm.theme.SceneSwitcher
 import io.xymul.projtm.theme.ThemeService
 import java.awt.BorderLayout
 import java.awt.Component
-import java.awt.Point
 import java.awt.event.MouseAdapter
 import java.awt.event.MouseEvent
 import javax.swing.JCheckBox
@@ -33,19 +32,14 @@ import javax.swing.table.TableCellRenderer
 private const val SCENES_COLUMN = 1
 
 // Application level page that lists every project known to the plugin.
-class ProjectThemeManagerConfigurable : Configurable, Configurable.Composite {
+class ProjectThemeManagerConfigurable : Configurable {
 
     private val model = ProjectsTableModel()
     private val table = JBTable(model)
     private val disposable = Disposer.newDisposable("ProjectThemeManager")
     private val onRepositoryChanged: () -> Unit = { reset() }
 
-    // The child page is created once because the platform expects a stable instance.
-    private val currentProjectPage = CurrentProjectConfigurable()
-
     override fun getDisplayName(): String = ProjectThemeManagerBundle.message("settings.displayName")
-
-    override fun getConfigurables(): Array<Configurable> = arrayOf(currentProjectPage)
 
     override fun createComponent(): JComponent {
         table.selectionModel.selectionMode = ListSelectionModel.SINGLE_SELECTION
@@ -147,24 +141,16 @@ class ProjectThemeManagerConfigurable : Configurable, Configurable.Composite {
     private fun scenePopupListener(): MouseAdapter = object : MouseAdapter() {
         override fun mouseClicked(event: MouseEvent) {
             val row = table.rowAtPoint(event.point)
-            val column = table.columnAtPoint(event.point)
-            if (row < 0 || column != SCENES_COLUMN) return
-            showScenesPopup(row, column)
+            if (row < 0 || table.columnAtPoint(event.point) != SCENES_COLUMN) return
+            showScenesPopup(row)
         }
     }
 
-    // The chooser opens right below the clicked cell instead of below the whole table.
-    private fun showScenesPopup(row: Int, column: Int) {
+    // Centered chooser, the entries use the same padding as the quick switch popup.
+    private fun showScenesPopup(row: Int) {
         val names = model.sceneNames(row)
         if (names.isEmpty()) return
-        val popup = JBPopupFactory.getInstance()
-            .createPopupChooserBuilder(names)
-            .setTitle(model.rowAt(row).entry.name)
-            .setRequestFocus(true)
-            .setItemChosenCallback { chosen -> editScene(row, chosen) }
-            .createPopup()
-        val cell = table.getCellRect(row, column, true)
-        popup.show(RelativePoint(table, Point(cell.x, cell.y + cell.height)))
+        showSceneChooser(names, model.rowAt(row).entry.name, null, table) { chosen -> editScene(row, chosen) }
     }
 
     private fun editScene(row: Int, sceneName: String) {
@@ -172,16 +158,12 @@ class ProjectThemeManagerConfigurable : Configurable, Configurable.Composite {
         val scene = projectRow.config.scenes.firstOrNull { it.name == sceneName } ?: return
         val dialog = SceneDialog(projectRow.config.scenes.map { it.name }.toSet() - sceneName, scene)
         if (!dialog.showAndGet()) return
-        val themeId = dialog.themeId() ?: scene.themeId
+        val themeName = dialog.themeName() ?: scene.theme
         val newName = dialog.sceneName()
         projectRow.config = projectRow.config.copy(
             defaultScene = if (projectRow.config.defaultScene == sceneName) newName else projectRow.config.defaultScene,
             scenes = projectRow.config.scenes.map { current ->
-                if (current.name == sceneName) {
-                    Scene(newName, themeId, ThemeService.getInstance().isDark(themeId))
-                } else {
-                    current
-                }
+                if (current.name == sceneName) Scene(newName, themeName) else current
             },
         )
         model.refreshRow(row)
@@ -196,8 +178,7 @@ class ProjectThemeManagerConfigurable : Configurable, Configurable.Composite {
         val config = repository.scenesOf(entry)
         val state = ActiveSceneService.getInstance(project)
         if (state.applied && state.activeScene != config.defaultScene) return
-        val scene = config.scenes.firstOrNull { it.name == config.defaultScene } ?: return
-        if (ThemeService.getInstance().applyTheme(scene.themeId)) state.markApplied(scene.name)
+        config.defaultScene?.let { SceneSwitcher.switchTo(project, it) }
     }
 }
 

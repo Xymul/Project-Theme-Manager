@@ -23,8 +23,8 @@ class SceneDialog(private val usedNames: Set<String>, scene: Scene? = null) : Di
         themeBox.renderer = ThemeItemRenderer()
         installedThemes().forEach { themeBox.addItem(it) }
         // A new scene starts with the theme that is active right now.
-        val initialThemeId = scene?.themeId ?: ThemeService.getInstance().currentThemeId()
-        themeBox.selectedItem = installedThemes().firstOrNull { it.id == initialThemeId }
+        val initialTheme = scene?.theme ?: ThemeService.getInstance().currentThemeName()
+        themeBox.selectedItem = installedThemes().firstOrNull { it.name == initialTheme }
         init()
     }
 
@@ -48,5 +48,5 @@ class SceneDialog(private val usedNames: Set<String>, scene: Scene? = null) : Di
 
     fun sceneName(): String = nameField.text.trim()
 
-    fun themeId(): String? = (themeBox.selectedItem as? ThemeItem)?.id
+    fun themeName(): String? = (themeBox.selectedItem as? ThemeItem)?.name
 }

@@ -6,7 +6,8 @@ import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.components.Service
 
-data class ThemeItem(val id: String, val name: String, val dark: Boolean)
+// Themes are identified by their display name.
+data class ThemeItem(val name: String)
 
 // Reads, switches and observes the user interface themes of the IDE.
 @Service(Service.Level.APP)
@@ -19,23 +20,22 @@ class ThemeService {
     fun themes(): List<ThemeItem> {
         val manager = lafManager() ?: return emptyList()
         return runCatching { manager.installedThemes }
-            .getOrNull()?.map { ThemeItem(it.id, it.name, it.isDark) }
+            .getOrNull()?.map { ThemeItem(it.name) }
             ?.toList()
+            ?.distinctBy { it.name }
             ?.sortedBy { it.name.lowercase() }
             ?: emptyList()
     }
 
-    fun currentThemeId(): String? =
-        runCatching { lafManager()?.currentUIThemeLookAndFeel?.id }.getOrNull()
+    fun currentThemeName(): String? = runCatching { lafManager()?.currentUIThemeLookAndFeel?.name }.getOrNull()
 
-    fun themeName(themeId: String): String? = themes().firstOrNull { it.id == themeId }?.name
+    fun isInstalled(themeName: String): Boolean = themes().any { it.name == themeName }
 
-    fun isDark(themeId: String): Boolean = themes().firstOrNull { it.id == themeId }?.dark ?: false
-
-    // Switches the theme on the EDT, returns false when the theme is not installed.
-    fun applyTheme(themeId: String): Boolean {
+    // Switches the theme by name, returns false when no theme with that name is installed.
+    fun applyThemeByName(themeName: String): Boolean {
         val manager = lafManager() ?: return false
-        val theme = runCatching { manager.findLaf(themeId) }.getOrNull() ?: return false
+        val theme = runCatching { manager.installedThemes.firstOrNull { it.name == themeName } }.getOrNull()
+            ?: return false
         val application = ApplicationManager.getApplication() ?: return false
         application.invokeLater { manager.setCurrentUIThemeLookAndFeel(theme) }
         return true

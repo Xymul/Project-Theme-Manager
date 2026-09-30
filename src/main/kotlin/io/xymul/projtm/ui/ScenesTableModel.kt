@@ -61,7 +61,7 @@ class ScenesTableModel : AbstractTableModel() {
         val scene = scenes[row]
         return when (column) {
             0 -> scene.name
-            1 -> themeItem(scene.themeId)
+            1 -> themeItem(scene.theme)
             else -> scene.name == defaultScene
         }
     }
@@ -71,7 +71,7 @@ class ScenesTableModel : AbstractTableModel() {
             1 -> {
                 val theme = value as? io.xymul.projtm.theme.ThemeItem ?: return
                 scenes = scenes.mapIndexed { index, scene ->
-                    if (index == row) scene.copy(themeId = theme.id, dark = theme.dark) else scene
+                    if (index == row) scene.copy(theme = theme.name) else scene
                 }
                 fireTableRowsUpdated(row, row)
             }

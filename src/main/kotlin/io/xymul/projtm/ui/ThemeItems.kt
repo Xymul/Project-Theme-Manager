@@ -7,15 +7,12 @@ import javax.swing.JLabel
 import javax.swing.JList
 import javax.swing.ListCellRenderer
 
-fun ThemeItem.displayName(): String = if (dark) "$name (dark)" else name
+// A theme is shown and stored by its name only.
+fun ThemeItem.displayName(): String = name
 
 fun installedThemes(): List<ThemeItem> = ThemeService.getInstance().themes()
 
-fun themeItem(themeId: String): ThemeItem {
-    val installed = installedThemes().firstOrNull { it.id == themeId }
-    if (installed != null) return installed
-    return ThemeItem(themeId, ProjectThemeManagerBundle.message("settings.theme.missing", themeId), false)
-}
+fun themeItem(themeName: String): ThemeItem = ThemeItem(themeName)
 
 class ThemeItemRenderer : ListCellRenderer<ThemeItem> {
 
