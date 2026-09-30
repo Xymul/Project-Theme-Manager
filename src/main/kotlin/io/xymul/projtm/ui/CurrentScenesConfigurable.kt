@@ -92,7 +92,7 @@ class CurrentScenesConfigurable : Configurable {
         Disposer.dispose(disposable)
     }
 
-    private fun currentProject(): Project? = currentProjectOf(editor.component) ?: fallbackProject()
+    private fun currentProject(): Project? = currentProjectOf(editor.component)
 
     private fun entryFor(project: Project): ProjectEntry? {
         val path = projectPathOf(project) ?: return null

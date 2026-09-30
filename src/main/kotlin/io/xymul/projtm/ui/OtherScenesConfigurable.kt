@@ -58,7 +58,7 @@ class OtherScenesConfigurable : Configurable {
         repository.updateScenes(entry, config)
         storedConfig = config
         // Only the project of the current window may switch the theme right away.
-        val project = currentProjectOf(editor.component) ?: fallbackProject() ?: return
+        val project = currentProjectOf(editor.component) ?: return
         if (projectPathOf(project) == entry.path && SceneSwitcher.shouldApply(project, stored, config)) {
             config.defaultScene?.let { SceneSwitcher.switchTo(project, it) }
         }

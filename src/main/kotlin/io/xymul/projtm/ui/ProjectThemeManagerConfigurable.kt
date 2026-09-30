@@ -2,6 +2,7 @@ package io.xymul.projtm.ui
 
 import com.intellij.CommonBundle
 import com.intellij.openapi.options.Configurable
+import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.ProjectManager
 import com.intellij.openapi.ui.Messages
 import com.intellij.openapi.util.Disposer
@@ -54,6 +55,9 @@ class ProjectThemeManagerConfigurable : Configurable {
     private val disposable = Disposer.newDisposable("ProjectThemeManager")
     private val onRepositoryChanged: () -> Unit = { reset() }
 
+    // The project of the current window, used to pin and highlight its row.
+    private val statusLabel = JBLabel()
+
     override fun getDisplayName(): String = ProjectThemeManagerBundle.message("settings.displayName")
 
     override fun createComponent(): JComponent {
@@ -72,8 +76,11 @@ class ProjectThemeManagerConfigurable : Configurable {
             .setRemoveActionName(ProjectThemeManagerBundle.message("settings.button.remove"))
             .setRemoveActionUpdater { table.selectedRow >= 0 }
             .createPanel()
+        val header = JPanel(BorderLayout())
+        header.add(JBLabel(ProjectThemeManagerBundle.message("settings.parentHint")), BorderLayout.WEST)
+        header.add(statusLabel, BorderLayout.EAST)
         val panel = JPanel(BorderLayout())
-        panel.add(JBLabel(ProjectThemeManagerBundle.message("settings.parentHint")), BorderLayout.NORTH)
+        panel.add(header, BorderLayout.NORTH)
         panel.add(decorated, BorderLayout.CENTER)
         ConfigRepository.getInstance().addChangeListener(onRepositoryChanged)
         ThemeService.getInstance().subscribe(disposable) { reset() }
@@ -97,12 +104,21 @@ class ProjectThemeManagerConfigurable : Configurable {
 
     override fun reset() {
         val repository = ConfigRepository.getInstance()
+        val project = currentProjectOf(table)
         val current = currentEntry()
+        statusLabel.text = statusText(project, current)
         val rows = repository.projects().map { ProjectRow(it, repository.scenesOf(it)) }
         model.setData(
             rows.sortedWith(compareBy({ it.entry.uuid != current?.uuid }, { it.entry.name.lowercase() })),
             current?.uuid,
         )
+    }
+
+    // Tells the user which project this page treats as the current one.
+    private fun statusText(project: Project?, entry: ProjectEntry?): String = when {
+        project == null -> ProjectThemeManagerBundle.message("settings.page.noProject")
+        entry == null -> ProjectThemeManagerBundle.message("settings.page.currentProjectNotConfigured", project.name)
+        else -> ProjectThemeManagerBundle.message("settings.page.currentProject", project.name)
     }
 
     override fun disposeUIResources() {
@@ -115,7 +131,6 @@ class ProjectThemeManagerConfigurable : Configurable {
         val path = projectPathOf(project) ?: return null
         return ConfigRepository.getInstance().findProject(path)
     }
-
     private fun addProject() {
         val repository = ConfigRepository.getInstance()
         val open = ProjectManager.getInstance().openProjects.mapNotNull { projectPathOf(it) }
