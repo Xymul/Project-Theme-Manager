@@ -13,5 +13,13 @@
     <!-- IntelliJ Platform based IDEs only (IDEA, CLion, PyCharm, DataGrip, ...). -->
     <depends>com.intellij.modules.platform</depends>
 
+    <extensions defaultExtensionNs="com.intellij">
+        <applicationConfigurable
+                id="io.xymul.projtm.settings"
+                displayName="Project Theme Manager"
+                instance="io.xymul.projtm.ui.ProjectThemeManagerConfigurable"/>
+        <postStartupActivity implementation="io.xymul.projtm.startup.ProjectOpenActivity"/>
+    </extensions>
+
     <notificationGroup id="ProjectThemeManager" displayType="BALLOON"/>
 </idea-plugin>
