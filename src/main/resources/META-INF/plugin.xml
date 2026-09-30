@@ -1,0 +1,15 @@
+<!-- Project Theme Manager: remembers the UI theme per project and switches it when a project is opened. -->
+<idea-plugin>
+    <id>io.xymul.projtm</id>
+    <name>Project Theme Manager</name>
+    <vendor>io.xymul</vendor>
+
+    <description><![CDATA[
+        Records the UI theme (Look and Feel) of different projects and switches the theme
+        automatically when a project is opened. Work Scenes allow binding several themes
+        to a single project and switching between them.
+    ]]></description>
+
+    <!-- IntelliJ Platform based IDEs only (IDEA, CLion, PyCharm, DataGrip, ...). -->
+    <depends>com.intellij.modules.platform</depends>
+</idea-plugin>

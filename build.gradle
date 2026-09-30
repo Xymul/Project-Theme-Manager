@@ -1,0 +1,50 @@
+plugins {
+    id 'java'
+    id 'org.jetbrains.kotlin.jvm' version '2.4.20'
+    id 'org.jetbrains.intellij.platform' version '2.19.0'
+}
+
+// Local (read-only) environment, see gradle.properties
+def localIdePath = providers.gradleProperty('localIdePath').get()
+
+group = 'io.xymul.projtm'
+version = '1.0-SNAPSHOT'
+
+repositories {
+    mavenCentral()
+    intellijPlatform {
+        defaultRepositories()
+    }
+}
+
+dependencies {
+    intellijPlatform {
+        // IntelliJ Platform SDK: the locally installed IntelliJ IDEA 2026.2.3 (read only, never modified).
+        local(localIdePath)
+    }
+
+    testImplementation 'org.jetbrains.kotlin:kotlin-test'
+}
+
+intellijPlatform {
+    // Do not launch the IDE while building.
+    buildSearchableOptions = false
+    // No Swing forms are used, so bytecode instrumentation is not required.
+    instrumentCode = false
+    // Keep the sandbox used by runIde/runClient inside this project.
+    sandboxContainer = layout.buildDirectory.dir('idea-sandbox')
+}
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(25)
+    }
+}
+
+kotlin {
+    jvmToolchain(25)
+}
+
+test {
+    useJUnitPlatform()
+}
