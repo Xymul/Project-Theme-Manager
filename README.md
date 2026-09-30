@@ -44,6 +44,10 @@ Click subpage `Other Scenes` to manage other registered projects' scenes.
 
 ![other_scenes](screenshots/other_scenes.png)
 
+You can use shortcut `CTRL+ALT+W` to quick switch current project's scenes:
+
+![quick_switch_current](screenshots/quick_switch_current.png)
+
 ## Build
 
 Requirements:
