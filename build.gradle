@@ -8,7 +8,7 @@ plugins {
 def localIdePath = providers.gradleProperty('localIdePath').get()
 
 group = 'io.xymul.projtm'
-version = '1.0-SNAPSHOT'
+version = '0.1.0'
 
 repositories {
     mavenCentral()
