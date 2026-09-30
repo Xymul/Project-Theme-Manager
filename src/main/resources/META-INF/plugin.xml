@@ -13,6 +13,8 @@
     <!-- IntelliJ Platform based IDEs only (IDEA, CLion, PyCharm, DataGrip, ...). -->
     <depends>com.intellij.modules.platform</depends>
 
+    <resource-bundle>messages.ProjectThemeManagerBundle</resource-bundle>
+
     <extensions defaultExtensionNs="com.intellij">
         <applicationConfigurable
                 id="io.xymul.projtm.settings"
@@ -20,6 +22,23 @@
                 instance="io.xymul.projtm.ui.ProjectThemeManagerConfigurable"/>
         <postStartupActivity implementation="io.xymul.projtm.startup.ProjectOpenActivity"/>
     </extensions>
+
+    <actions>
+        <!-- Quick switch, rebindable in Settings | Keymap. Ctrl+Alt+W is free in the default keymap,
+             its only other user is "Kotlin: Run Scratch" (Kotlin plugin). -->
+        <action id="io.xymul.projtm.switchWorkScene"
+                class="io.xymul.projtm.action.SwitchWorkSceneAction"
+                text="%action.switchWorkScene.text"
+                description="%action.switchWorkScene.description">
+            <keyboard-shortcut keymap="$default" first-keystroke="control alt W"/>
+        </action>
+
+        <!-- Tools | Project Theme Manager | Switch Work Scene -->
+        <group id="io.xymul.projtm.toolsGroup" text="%action.group.tools" popup="true">
+            <reference ref="io.xymul.projtm.switchWorkScene"/>
+            <add-to-group group-id="ToolsMenu" anchor="last"/>
+        </group>
+    </actions>
 
     <notificationGroup id="ProjectThemeManager" displayType="BALLOON"/>
 </idea-plugin>
