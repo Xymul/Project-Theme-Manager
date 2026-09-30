@@ -15,6 +15,35 @@ When you need to switch themes, just press the shortcut key of this plugin, and 
 
 **You can think of this plugin as a bookmark that’s an alias for a UI Theme.**
 
+## Usage
+
+Open `File-Settings-Project Theme Manager`:
+
+![ptmmain](screenshots/ptmmain.png)
+
+Click `+` to add a config of a project, set the default/primary added scene name and choose its theme:
+
+Note:
+- *Only valid IntelliJ project directory can be input*
+- *The current project is pinned at top, see above*
+- *The default filling text see below(current project path & `default` scene name)*
+
+![addconfig_pl](screenshots/addconfig_pl.png)
+
+Click `-` to remove a config.
+
+Click subpage `Current Scenes` to manage current project's scenes:
+
+![current_scenes](screenshots/current_scenes.png)
+
+you can set default scene for opening the project, changes the name of scenes or bundled theme of a scene.  
+
+*Note: when default scene is changed, your editor UI theme is defaulted to be updated. Future we will add an option to turn this default behavior on or off.*
+
+Click subpage `Other Scenes` to manage other registered projects' scenes. 
+
+![other_scenes](screenshots/other_scenes.png)
+
 ## Build
 
 Requirements:
