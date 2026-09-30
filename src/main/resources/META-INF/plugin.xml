@@ -12,4 +12,6 @@
 
     <!-- IntelliJ Platform based IDEs only (IDEA, CLion, PyCharm, DataGrip, ...). -->
     <depends>com.intellij.modules.platform</depends>
+
+    <notificationGroup id="ProjectThemeManager" displayType="BALLOON"/>
 </idea-plugin>
